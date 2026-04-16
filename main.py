@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
-from sklearn.decomposition import TruncatedSVD
 import requests
+import random
 
 app = FastAPI()
 
@@ -15,43 +15,18 @@ app.add_middleware(
 )
 
 # -------------------------
-# LOAD DATA
+# LOAD DATA (LIGHT)
 # -------------------------
-ratings = pd.read_csv("rating.csv")
 anime = pd.read_csv("anime.csv")
-
-# -------------------------
-# CLEAN DATA
-# -------------------------
-ratings = ratings[ratings["rating"] != -1]
-ratings = ratings.head(20000)
-
-# -------------------------
-# CREATE MATRIX
-# -------------------------
-matrix = ratings.pivot_table(
-    index="user_id",
-    columns="anime_id",
-    values="rating"
-).fillna(0)
-
-# -------------------------
-# SVD MODEL
-# -------------------------
-import pickle
-
-with open("model.pkl", "rb") as f:
-    pred_df = pickle.load(f)
 
 print("✅ Backend ready")
 
 # -------------------------
-# IMAGE CACHE (IMPORTANT)
+# IMAGE CACHE
 # -------------------------
 image_cache = {}
 
 def get_image(title):
-    # use cache first
     if title in image_cache:
         return image_cache[title]
 
@@ -70,7 +45,6 @@ def get_image(title):
     except:
         pass
 
-    # fallback
     fallback = "https://via.placeholder.com/300x400?text=Anime"
     image_cache[title] = fallback
     return fallback
@@ -82,39 +56,25 @@ def get_image(title):
 def home():
     return {"message": "Anime recommender running"}
 
-
 @app.get("/recommend")
-def recommend(user_id: int = 1, n: int = 6):
+def recommend(n: int = 6):
 
-    # fallback user
-    if user_id not in pred_df.index:
-        user_id = pred_df.index[0]
-
-    user_pred = pred_df.loc[user_id]
-
-    watched = ratings[ratings["user_id"] == user_id]["anime_id"].values
-    recommendations = user_pred.drop(watched, errors="ignore")
-
-    top_ids = recommendations.sort_values(ascending=False).head(n).index
+    sample = anime.sample(n * 3)
 
     result = []
 
-    for anime_id in top_ids:
-        row = anime[anime["anime_id"] == anime_id]
-
-        if row.empty:
-            continue
-
-        row = row.iloc[0]
-
+    for _, row in sample.iterrows():
         title = str(row["name"]).split("(")[0].strip()
         genre = str(row["genre"]).split(",")[0]
 
         result.append({
             "title": title,
-            "rating": float(user_pred[anime_id]),
+            "rating": round(random.uniform(2.0, 5.0), 1),
             "genre": genre,
             "image": get_image(title)
         })
+
+        if len(result) == n:
+            break
 
     return result
