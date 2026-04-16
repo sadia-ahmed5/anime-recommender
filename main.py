@@ -38,16 +38,10 @@ matrix = ratings.pivot_table(
 # -------------------------
 # SVD MODEL
 # -------------------------
-svd = TruncatedSVD(n_components=50)
-matrix_reduced = svd.fit_transform(matrix)
+import pickle
 
-predicted = svd.inverse_transform(matrix_reduced)
-
-pred_df = pd.DataFrame(
-    predicted,
-    index=matrix.index,
-    columns=matrix.columns
-)
+with open("model.pkl", "rb") as f:
+    pred_df = pickle.load(f)
 
 print("✅ Backend ready")
 

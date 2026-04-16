@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 image_cache.json
 ml-100k/
+*.pkl
