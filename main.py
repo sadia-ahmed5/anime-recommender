@@ -67,6 +67,10 @@ def recommend(n: int = 6):
         title = str(row["name"]).split("(")[0].strip()
         genre = str(row["genre"]).split(",")[0]
 
+        # ❌ FILTER BAD CONTENT
+        if genre.lower() == "hentai":
+            continue
+
         result.append({
             "title": title,
             "rating": round(random.uniform(2.0, 5.0), 1),
